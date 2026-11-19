@@ -25,10 +25,10 @@ R = [r for r in D['R'] if r[0] in pm]
 used = sorted({s for r in R for s in r[11]}); sm = {o: n for n, o in enumerate(used)}
 pull = dict(P=P, S=[D['S'][o] for o in used], R=[[pm[r[0]]] + r[1:11] + [[sm[x] for x in r[11]]] + r[12:] for r in R], cats=D['cats'], notes=D['notes'], docs={})
 open(f'{outdir}/pull-list/index.html', 'w', encoding='utf-8').write(page('NM Starter Parcels Pull List',
-    f"Instruments to pull for the {len(P)} starter parcels, read from Charlie's Curry abstracts and indexes and the Quay ground-team account indexes. Same rows as \"FAT NM - Starter parcels pull list\" on SharePoint. Machine-read: confirm every row against the recorded instrument.",
+    f"Instruments to pull for the {len(P)} starter parcels, read from Charlie's Curry abstracts and indexes and the Quay ground-team account indexes. Same rows as \"FAT NM - Starter parcels pull list\" on SharePoint. On file marks instruments already copied into the parcel's Documents folder (checked 11/19). Machine-read: confirm every row against the recorded instrument.",
     pull, 'pull'))
 cat = dict(P=D['P'], S=D['S'], R=[], cats=D['cats'], notes=[], docs=DOCS)
 open(f'{outdir}/catalog/index.html', 'w', encoding='utf-8').write(page('NM Pending Parcels Document Catalog',
-    f"Every document filed so far for the {len(D['P'])} pending parcels First American numbered on 11/3: plat maps, property and tax cards, draft runsheets, GLO patents, and the index and abstract files. Links open SharePoint (Vanguard sign-in).",
+    f"Every document filed so far for the {len(D['P'])} pending parcels First American numbered on 11/3: plat maps, property and tax cards, draft runsheets, GLO patents, recorded documents the team has pulled, and the index and abstract files (updated 11/19, new folder locations). Links open SharePoint (Vanguard sign-in).",
     cat, 'cat'))
 print('pull', len(P), len(pull['R']), 'catalog', len(D['P']), sum(len(v) for v in DOCS.values()))

@@ -81,10 +81,11 @@ details.p[open]>summary{border-bottom:1px solid var(--line)}
     <select id="fc" aria-label="County"><option value="">All counties</option></select>
     <select id="ff" aria-label="FA file"><option value="">All FA files</option></select>
     <select id="fk" aria-label="Category"><option value="">All categories</option></select>
+    <select id="fo" aria-label="Pulled"><option value="">Pulled and not pulled</option><option value="n">Still to pull</option><option value="y">On file (pulled)</option></select>
     <span class="count" id="cnt"></span>
   </div></div>
   <main><div class="wrap">
-    <div class="tbl"><table><thead><tr><th>FA file</th><th>APN / Account</th><th>Section</th><th>#</th><th>Category</th><th>Type</th><th>Book/Page</th><th>Dated</th><th>Recorded</th><th>Grantor</th><th>Grantee</th><th>Qtr</th><th>Source</th></tr></thead><tbody id="rows"></tbody></table></div>
+    <div class="tbl"><table><thead><tr><th>FA file</th><th>APN / Account</th><th>Section</th><th>#</th><th>Category</th><th>Type</th><th>Book/Page</th><th>Dated</th><th>Recorded</th><th>Grantor</th><th>Grantee</th><th>Qtr</th><th>Source</th><th>On file</th></tr></thead><tbody id="rows"></tbody></table></div>
     <div class="more"><button id="more" type="button">Show 300 more</button></div>
   </div></main>
 </section>
@@ -108,15 +109,15 @@ const fmt=n=>n.toLocaleString('en-US');
 const chipCls=s=>s.startsWith('NO SOURCE')?'c-bad':(s.startsWith('Index + abstract')||s.startsWith('Ground'))?'c-ok':'c-warn';
 // stats
 const seeded=P.filter(p=>p[8].startsWith('Seeded')).length, nosrc=P.filter(p=>p[6].startsWith('NO SOURCE')).length;
-$('stats').innerHTML=MODE==='cat'?(()=>{const n={};Object.values(DOCS).flat().forEach(d=>n[d[0]]=(n[d[0]]||0)+1);return `<span><b>${fmt(P.length)}</b> parcels</span>`+Object.entries(n).map(([k,v])=>`<span><b>${fmt(v)}</b> ${esc(k.toLowerCase())}s</span>`).join('')+`<span><b>${fmt(S.length)}</b> index/abstract files</span>`})():`<span><b>${fmt(P.length)}</b> parcels</span><span><b>${fmt(R.length)}</b> instruments to pull</span><span><b>${fmt(S.length)}</b> index/abstract files</span><span><b>${seeded}</b> draft runsheets seeded</span><span><b>${nosrc}</b> parcels with no source yet</span>`;
+$('stats').innerHTML=MODE==='cat'?(()=>{const n={};Object.values(DOCS).flat().forEach(d=>n[d[0]]=(n[d[0]]||0)+1);return `<span><b>${fmt(P.length)}</b> parcels</span>`+Object.entries(n).map(([k,v])=>`<span><b>${fmt(v)}</b> ${esc(k.toLowerCase())}s</span>`).join('')+`<span><b>${fmt(S.length)}</b> index/abstract files</span>`})():`<span><b>${fmt(P.length)}</b> parcels</span><span><b>${fmt(R.length)}</b> instruments to pull</span><span><b>${fmt(S.length)}</b> index/abstract files</span><span><b>${fmt(R.filter(r=>r[13]).length)}</b> already on file</span><span><b>${seeded}</b> draft runsheets seeded</span><span><b>${nosrc}</b> parcels with no source yet</span>`;
 // search index
 const idx=R.map(r=>{const p=P[r[0]];return [p[1],p[2],p[3],p[4],r[3],r[4]+'/'+r[5],r[4]+'-'+r[5],r[8],r[9],r[6],r[7],CATS[r[2]]].join(' ').toLowerCase()});
 const opt=(sel,vals)=>{for(const v of vals){const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o)}};
 opt($('fc'),[...new Set(P.map(p=>p[0]))]); opt($('ff'),[...new Set(P.map(p=>p[1]))].sort()); opt($('fk'),CATS);
 let hits=[],shown=0;
 function run(){
-  const q=$('q').value.trim().toLowerCase().split(/\s+/).filter(Boolean), c=$('fc').value,f=$('ff').value,k=$('fk').value;
-  hits=[];for(let i=0;i<R.length;i++){const r=R[i],p=P[r[0]];if(c&&p[0]!==c)continue;if(f&&p[1]!==f)continue;if(k&&CATS[r[2]]!==k)continue;if(q.length&&!q.every(t=>idx[i].includes(t)))continue;hits.push(i)}
+  const q=$('q').value.trim().toLowerCase().split(/\s+/).filter(Boolean), c=$('fc').value,f=$('ff').value,k=$('fk').value,o=$('fo').value;
+  hits=[];for(let i=0;i<R.length;i++){const r=R[i],p=P[r[0]];if(c&&p[0]!==c)continue;if(f&&p[1]!==f)continue;if(k&&CATS[r[2]]!==k)continue;if(o==='y'&&!r[13])continue;if(o==='n'&&r[13])continue;if(q.length&&!q.every(t=>idx[i].includes(t)))continue;hits.push(i)}
   shown=0;$('rows').innerHTML='';page();
 }
 function page(){
@@ -124,13 +125,13 @@ function page(){
   for(let j=shown;j<end;j++){const r=R[hits[j]],p=P[r[0]];
     const src=r[11].map(si=>{const s=S[si];const u=s[8]||s[9];return `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(s[5])}</a>`}).join('<br>');
     const note=NOTES[r[12]]?`<div class="note">${esc(NOTES[r[12]])}</div>`:'';
-    out.push(`<tr><td class="mono">${esc(p[1])}</td><td class="mono">${esc(p[2])}</td><td class="mono">${esc(p[4].split(' ')[0])}</td><td class="mono">${r[1]}</td><td><span class="cat">${esc(CATS[r[2]])}</span></td><td class="mono">${esc(r[3])}</td><td class="bp">${esc(r[4])}/${esc(r[5])}</td><td class="mono">${esc(r[6])}</td><td class="mono">${esc(r[7])}</td><td>${esc(r[8])}</td><td>${esc(r[9])}${note}</td><td class="mono">${esc(r[10])}</td><td class="src">${src}</td></tr>`)}
+    out.push(`<tr><td class="mono">${esc(p[1])}</td><td class="mono">${esc(p[2])}</td><td class="mono">${esc(p[4].split(' ')[0])}</td><td class="mono">${r[1]}</td><td><span class="cat">${esc(CATS[r[2]])}</span></td><td class="mono">${esc(r[3])}</td><td class="bp">${esc(r[4])}/${esc(r[5])}</td><td class="mono">${esc(r[6])}</td><td class="mono">${esc(r[7])}</td><td>${esc(r[8])}</td><td>${esc(r[9])}${note}</td><td class="mono">${esc(r[10])}</td><td class="src">${src}</td><td class="src">${r[13]?`<a href="${esc(r[13])}" target="_blank" rel="noopener"><span class="chip c-ok">On file</span></a>`:''}</td></tr>`)}
   $('rows').insertAdjacentHTML('beforeend',out.join(''));shown=end;
   $('cnt').textContent=hits.length?`Showing ${fmt(shown)} of ${fmt(hits.length)}`:'No matching instruments';
   $('more').parentElement.hidden=shown>=hits.length;
 }
 $('more').onclick=page;
-let tm;for(const id of ['q','fc','ff','fk'])$(id).addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(run,120)});
+let tm;for(const id of ['q','fc','ff','fk','fo'])$(id).addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(run,120)});
 // catalogue
 const byApn={};S.forEach((s,i)=>{for(const a of String(s[7]).split(', '))(byApn[a.split(' ')[0]] ||= []).push(i)});
 opt($('cc'),[...new Set(P.map(p=>p[0]))]); opt($('cs'),[...new Set(P.map(p=>p[6]))].sort());
