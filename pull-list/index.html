@@ -91,6 +91,9 @@ details.p[open]>summary{border-bottom:1px solid var(--line)}
     <select id="fc" aria-label="County"><option value="">All counties</option></select>
     <select id="ff" aria-label="FA file"><option value="">All FA files</option></select>
     <select id="fr" aria-label="Round"><option value="">All rounds</option></select>
+    <select id="ft" aria-label="Doc type"><option value="">All doc types</option></select>
+    <select id="fb" aria-label="Book"><option value="">All books</option></select>
+    <select id="fs" aria-label="Sort"><option value="">Sort: by parcel</option><option value="b">Sort: by book and page</option></select>
     <select id="fk" aria-label="Category"><option value="">All categories</option></select>
     <select id="fo" aria-label="Status"><option value="n" selected>Still to pull</option><option value="y">On file</option><option value="c">Copy in (on SharePoint elsewhere)</option><option value="l">Left off (old released mortgages etc.)</option><option value="">All rows</option></select>
     <span class="count" id="cnt"></span>
@@ -126,10 +129,14 @@ $('stats').innerHTML=MODE==='cat'?(()=>{const n={};Object.values(DOCS).flat().fo
 const idx=R.map(r=>{const p=P[r[0]];return [p[1],p[2],p[3],p[4],p[11]||'',p[12]||'',r[3],r[4]+'/'+r[5],r[4]+'-'+r[5],r[8],r[9],r[6],r[7],CATS[r[2]]].join(' ').toLowerCase()});
 const opt=(sel,vals)=>{for(const v of vals){const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o)}};
 opt($('fc'),[...new Set(P.map(p=>p[0]))]); opt($('ff'),[...new Set(P.map(p=>p[1]))].sort()); opt($('fk'),CATS); opt($('fr'),[...new Set(P.map(p=>p[11]||''))].filter(Boolean));
+const bn=x=>{const n=parseInt(x,10);return isNaN(n)?1e9:n};
+opt($('ft'),[...new Set(R.map(r=>(r[3]||'').toUpperCase()).filter(Boolean))].sort());
+opt($('fb'),[...new Set(R.map(r=>P[r[0]][0]+' book '+r[4]))].sort((a,b)=>{const [ca,,na]=a.split(' '),[cb,,nb]=b.split(' ');return ca.localeCompare(cb)||bn(na)-bn(nb)||na.localeCompare(nb)}));
 let hits=[],shown=0;
 function run(){
-  const q=$('q').value.trim().toLowerCase().split(/\s+/).filter(Boolean), c=$('fc').value,f=$('ff').value,k=$('fk').value,o=$('fo').value,rd=$('fr').value;
-  hits=[];for(let i=0;i<R.length;i++){const r=R[i],p=P[r[0]];if(c&&p[0]!==c)continue;if(f&&p[1]!==f)continue;if(rd&&p[11]!==rd)continue;if(k&&CATS[r[2]]!==k)continue;if(o==='y'&&!r[13])continue;if(o==='n'&&(r[13]||r[14]!=='p'))continue;if(o==='c'&&(r[13]||r[14]!=='c'))continue;if(o==='l'&&r[14]!=='l')continue;if(q.length&&!q.every(t=>idx[i].includes(t)))continue;hits.push(i)}
+  const q=$('q').value.trim().toLowerCase().split(/\s+/).filter(Boolean), c=$('fc').value,f=$('ff').value,k=$('fk').value,o=$('fo').value,rd=$('fr').value,ty=$('ft').value,bk=$('fb').value,so=$('fs').value;
+  hits=[];for(let i=0;i<R.length;i++){const r=R[i],p=P[r[0]];if(c&&p[0]!==c)continue;if(f&&p[1]!==f)continue;if(rd&&p[11]!==rd)continue;if(ty&&(r[3]||'').toUpperCase()!==ty)continue;if(bk&&p[0]+' book '+r[4]!==bk)continue;if(k&&CATS[r[2]]!==k)continue;if(o==='y'&&!r[13])continue;if(o==='n'&&(r[13]||r[14]!=='p'))continue;if(o==='c'&&(r[13]||r[14]!=='c'))continue;if(o==='l'&&r[14]!=='l')continue;if(q.length&&!q.every(t=>idx[i].includes(t)))continue;hits.push(i)}
+  if(so==='b')hits.sort((a,b)=>{const x=R[a],y=R[b],px=P[x[0]],py=P[y[0]];return px[0].localeCompare(py[0])||bn(x[4])-bn(y[4])||String(x[4]).localeCompare(String(y[4]))||bn(x[5])-bn(y[5])||String(x[5]).localeCompare(String(y[5]))||(x[3]||'').localeCompare(y[3]||'')||px[2].localeCompare(py[2])});
   shown=0;$('rows').innerHTML='';page();
 }
 function page(){
@@ -143,7 +150,7 @@ function page(){
   $('more').parentElement.hidden=shown>=hits.length;
 }
 $('more').onclick=page;
-let tm;for(const id of ['q','fc','ff','fk','fo','fr'])$(id).addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(run,120)});
+let tm;for(const id of ['q','fc','ff','fk','fo','fr','ft','fb','fs'])$(id).addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(run,120)});
 // catalogue
 const byApn={};S.forEach((s,i)=>{for(const a of String(s[7]).split(', '))(byApn[a.split(' ')[0]] ||= []).push(i)});
 opt($('cc'),[...new Set(P.map(p=>p[0]))]); opt($('cs'),[...new Set(P.map(p=>p[6]))].sort());
